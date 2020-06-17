@@ -13,6 +13,11 @@ class GUI(Frame):
     
     # Initializing what is seen on the appication when it starts up.
     def __init__(self, master):
+        # The call to super here allows us to initialize the frame class that we are inheriting
+        # from in our GUI class. This will let us use certain functions that are incorporated
+        # in the frame that are not necessarily shown in the GUI class without reference to
+        # the actual parent.
+        super(GUI, self).__init__()
 
         # Creating a label with a specific text, font, foreground color, and background color.
         self.lab = Label(master, text="Test Images", font=("Disos", 28), fg="#f4f4f4", bg="#333333")
@@ -45,7 +50,7 @@ class GUI(Frame):
         # a background color, an active background color (ie. when the button is pressed, what color
         # does it change to), a font, and a command. The command determines which function the button
         # should activate upon pressing.
-        self.obtn1 = Button(master, text="Run", bg="#99fadc", activebackground="#7ecfd4", font=("Disos", 28), command=self.startThread)
+        self.obtn1 = Button(master, text="Run", bg="#99fadc", activebackground="#7ecfd4", font=("Disos", 28), command=self.startThreadRunImage)
         # Similar to the other objects, I specify a certain x,y position I want the button to appear on
         # the application and allow it to stretch out both east and west 4 columns worth of space using
         # a combination of columnspan and sticky.
@@ -94,19 +99,70 @@ class GUI(Frame):
             except FileNotFoundError:
                 # Showing the error message.
                 messagebox.showerror("Note", "Temporary files already deleted.")
+    
+    # This function serves to find what the name of the volume file is, and returns a string
+    # to be used as the title for the volume comparison.
+    def getTitle(self, volumePath):
+        # Creating a list of strings from a directory and splitting the indexes using the
+        # '/' character as a cutting point.
+        sp1 = volumePath.split("\\")
+        # Getting the name of the datafile with extensions (like .nii or .nii.gz)
+        dataName = sp1[len(sp1) - 1]
+        # Removing the extensions from the datafile name, ultimately giving the title.
+        titleName = dataName.split(".")[0]
+        # Returning the title name.
+        return titleName
+
+    # This function serves to find where the volumes are located in the folder that holds the
+    # temporary files. Because in the example image I used, both the original volume and the
+    # prediction volume are both named the same, I use the memory size allocated to them in
+    # order to differentiate them.
+    def findVolumes(self):
+        try:
+            volumes = []
+            # Searching the directories for certain files.
+            for root, dirs, files in os.walk(os.getcwd()):
+                for file in files:
+                    # Specifying that I need files with .nii or .nii.gz extensions.
+                    if file.endswith(".nii") or file.endswith(".nii.gz"):
+                        # Making sure I get the full directory from the root.
+                        file = os.path.join(root, file)
+                        # Adding the found volumes to my list.
+                        volumes.append(file)
+            # This statement compares the two volumes found in the temporary files folder and
+            # determines that if the memory size of the first element in the list is greater
+            # than the memory size of the second element in the list, then the first volume
+            # has to be the original as the prediction volume will be a segmented version of
+            # the original volume. If the second element in the list has a memory size greater
+            # than the first, then the opposite is true.
+            if os.stat(volumes[0]).st_size > os.stat(volumes[1]).st_size:
+                original_volume = volumes[0]
+                prediction_volume = volumes[1]
+            else:
+                original_volume = volumes[1]
+                prediction_volume = volumes[0]
+            return (original_volume, prediction_volume)
+        # If no files are found in the search, then a message box is shown.
+        except FileNotFoundError:
+            messagebox.showerror("Error", "No Datafile found.")
+
 
     # This function shows the volume that was used to make the prediction as well as the predicted
     # segmentation volume in two separate windows. If there are no images found, an error message
     # will pop up.
     def showImage(self):
             try:
-                # Determining the path to the original volume.
-                original_volume = (os.path.join(os.getcwd(), "out", "app", "prediction", "h17_FLAIR_01.nii.gz"))
-                # Determining the path to the segmented volume.
-                segmented_volume = (os.path.join(os.getcwd(), "out", "app", "data", "h17_FLAIR_01.nii.gz"))
+                # Assigning two variables to the pathways where the volumes are placed.
+                # Because findVolumes() returns a tuple, I can assign two different variables
+                # to the output of this function.
+                original_volume, prediction_volume = self.findVolumes()
+                # Finding the name of the original file.
+                orTitle = self.getTitle(original_volume)
+                # Finding the name of the prediction file.
+                prTitle = self.getTitle(prediction_volume)
                 # Plotting both of the volumes.
-                plotting.plot_img(original_volume, title="h17_FLAIR_01 (Original)")
-                plotting.plot_img(segmented_volume, title="h17_FLAIR_01 (Predicted)")
+                plotting.plot_img(original_volume, title=orTitle)
+                plotting.plot_img(prediction_volume, title=prTitle)
                 # Showing the plot.
                 plotting.show()
             except ValueError:
@@ -158,7 +214,7 @@ class GUI(Frame):
     
     # Starting an asynchronous process for running a docker image. This function solves the previous
     # problem of having the application not respond when the docker image was being pulled.
-    def startThread(self):
+    def startThreadRunImage(self):
             threading.Thread(target=self.runImage).start()
     # Similar to the previous function, but the asynchronous process being run this time is different.
     def startThreadDeleteImage(self):
