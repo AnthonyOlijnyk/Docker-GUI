@@ -145,6 +145,9 @@ class GUI(Frame):
         # If no files are found in the search, then a message box is shown.
         except FileNotFoundError:
             messagebox.showerror("Error", "No Datafile found.")
+        # If not enough files are found in the search, then error.
+        except IndexError:
+            messagebox.showerror("Error", "There is either one of the original volume or the prediction volume not present, or they are both not present.")
 
 
     # This function shows the volume that was used to make the prediction as well as the predicted
@@ -168,6 +171,11 @@ class GUI(Frame):
             except ValueError:
                 # Error message.
                 messagebox.showerror("Error", "Files not found, try running the image first so that the temporary files appear in the out folder.")
+            except TypeError:
+                # This exception is thrown when the findVolumes() function malfunctions and
+                # doesn't return a tuple. This exception is brought to the users attention
+                # under the IndexError in the findVolumes() function.
+                pass
             
     # This function will attempt to run the specified image in a containerized environment. Once the
     # container is running, the message of "Check Terminal!" will appear in the top right of the window
@@ -233,6 +241,8 @@ def onClosing():
     root.destroy()
 
 def main():
+    # Changing the icon in the top left of the window.
+    root.iconbitmap("mri.ico")
     # Setting the size of the application window on startup.
     root.geometry("950x800")
     # Setting the title of the application window.
