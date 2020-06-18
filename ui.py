@@ -65,6 +65,12 @@ class GUI(Frame):
         self.obtn3 = Button(master, text="Delete", bg="#99fadc", activebackground="#7ecfd4", font=("Disos", 28), command=self.startThreadDeleteImage)
         self.obtn3.grid(row=7, column=0, columnspan=4, padx=2, pady=2, sticky=E+W)
 
+        # Creating a progress bar that indicates that the process is working correctly.
+        # Here I specify it to load horizontally, have a length of 300, and operate in the
+        # indeterminate mode meaning that it will show a box bouncing back and forth instead
+        # of a bar loading to 100%.
+        self.pbar = ttk.Progressbar(master, orient=HORIZONTAL, length=300, mode="indeterminate")
+
         # This command is telling the 0th column to fill up any horizontal space that it can with 
         # respect to the geometrical size of the window. Previously, we had used sticky to fill up
         # space, but sticky only fills up the space that a specific column takes up. This will allow
@@ -186,15 +192,10 @@ class GUI(Frame):
             imageName = "anthonyolijnyk/" + self.lbx.get(self.lbx.curselection())
             # Changing label text.
             self.t1.config(text="Pulling...")
-            # Creating a progress bar that indicates that the process is working correctly.
-            # Here I specify it to load horizontally, have a length of 300, and operate in the
-            # indeterminate mode meaning that it will show a box bouncing back and forth instead
-            # of a bar loading to 100%.
-            pbar = ttk.Progressbar(self, orient=HORIZONTAL, length=300, mode="indeterminate")
             # Attaching the progress bar to the application.
-            pbar.grid(row=0, column=2, pady=4, padx=10)
+            self.pbar.grid(row=0, column=2, pady=4, padx=10)
             # Setting a reocurring timer for the progress bar to follow.
-            pbar.start(10)
+            self.pbar.start(10)
             # Updating the main tkinter loop so that we can see the changes we made to the application
             # without needing to wait to get out of the function.
             self.update()
@@ -205,7 +206,7 @@ class GUI(Frame):
             self.update()
             # Once the pulling process is complete, the progress bar is no longer needed so it can be
             # removed. 
-            pbar.destroy()
+            self.pbar.destroy()
             # Changing label text.
             self.t1.config(text="Check Terminal!")
             # Updating main loop.
